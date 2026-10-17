@@ -1,0 +1,31 @@
+# OPCIONAL - NO SE USA TODAVIA: el backend no publica ni lee nada por MQTT.
+# Se deja preparado por si se quiere experimentar o ampliar el proyecto.
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+
+    container_name: bahguta-mqtt
+
+    hostname: mqtt
+
+    restart: unless-stopped
+
+    ports:
+      - "1883:1883"
+
+    volumes:
+      - ../config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ../data/mosquitto:/mosquitto/data
+
+    networks:
+      - bahguta
+
+    healthcheck:
+      test: ["CMD-SHELL", "pidof mosquitto || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  bahguta:
+    external: true

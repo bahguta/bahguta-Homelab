@@ -1,0 +1,34 @@
+services:
+  bahguta:
+    build: .
+    container_name: bahguta
+    restart: unless-stopped
+
+    # Las variables se leen del fichero .env (junto a este compose).
+    environment:
+      SPRING_PROFILES_ACTIVE: pro
+
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      PROMETHEUS_URL: ${PROMETHEUS_URL}
+
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+      WEATHER_CITY: ${WEATHER_CITY}
+      WEATHER_COUNTRY: ${WEATHER_COUNTRY}
+
+      OMADA_URL: ${OMADA_URL}
+      OMADA_USERNAME: ${OMADA_USERNAME}
+      OMADA_API_PASSWORD: ${OMADA_API_PASSWORD}
+      OMADA_INSECURE_TLS: ${OMADA_INSECURE_TLS}
+      OMADA_SITE: ${OMADA_SITE}
+    networks:
+      - web
+    volumes:
+      - /opt/bahguta/scripts:/opt/bahguta/scripts
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  web:
+    external: true

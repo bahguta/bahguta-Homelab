@@ -1,0 +1,31 @@
+# Logs
+logs/
+
+# Copias de seguridad
+backups/
+
+# Archivos temporales
+*.log
+*.tmp
+*.swp
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Variables sensibles
+.env
+.env.*
+application-local.yml
+bahguta-firmware/bahguta-firmware/include/Config.h
