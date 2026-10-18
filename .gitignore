@@ -1,0 +1,48 @@
+# Logs
+logs/
+
+# Copias de seguridad
+backups/
+
+# Archivos temporales
+*.log
+*.tmp
+*.swp
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Variables sensibles
+.env
+.env.*
+!.env.example
+!**/.env.example
+application-local.yml
+bahguta-firmware/bahguta-firmware/include/Config.h
+bahguta-display/bahguta_display/src/ui/Secrets.h
+
+# IDEs de Java/Eclipse (en el raiz y en subcarpetas)
+.project
+.classpath
+.settings/
+.factorypath
+
+# PlatformIO / build
+.pio/
+build/
+
+# Datos de los contenedores (PostgreSQL, etc.): nunca al repositorio
+/data/
+

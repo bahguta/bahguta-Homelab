@@ -1,0 +1,7 @@
+name: bahguta
+
+services:
+
+networks:
+  bahguta:
+    external: true

@@ -1,0 +1,52 @@
+services:
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      POST: 0
+      ALLOW_START: 1
+      ALLOW_STOP: 1
+      ALLOW_RESTARTS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Plantilla generada con make-proxy-template.sh (ver docs/NETWORK.md)
+      - ./haproxy.cfg.template:/usr/local/etc/haproxy/haproxy.cfg.template:ro
+    networks:
+      - docker-internal
+
+  bahguta:
+    build: .
+    container_name: bahguta
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: pro
+      DOCKER_HOST: tcp://docker-proxy:2375
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PROMETHEUS_URL: ${PROMETHEUS_URL}
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+      WEATHER_CITY: ${WEATHER_CITY}
+      WEATHER_COUNTRY: ${WEATHER_COUNTRY}
+      OMADA_URL: ${OMADA_URL}
+      OMADA_USERNAME: ${OMADA_USERNAME}
+      OMADA_API_PASSWORD: ${OMADA_API_PASSWORD}
+      OMADA_INSECURE_TLS: ${OMADA_INSECURE_TLS}
+      OMADA_SITE: ${OMADA_SITE}
+      BAHGUTA_API_KEY: ${BAHGUTA_API_KEY}
+      DOCKER_ALLOWED: ${DOCKER_ALLOWED}
+    depends_on:
+      - docker-proxy
+    networks:
+      - web
+      - docker-internal
+    volumes:
+      - /opt/bahguta/scripts:/opt/bahguta/scripts:ro
+
+networks:
+  web:
+    external: true
+  docker-internal:
+    internal: true

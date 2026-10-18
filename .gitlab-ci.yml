@@ -1,0 +1,190 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - when: never
+
+stages:
+  - deploy
+
+deploy_production:
+  stage: deploy
+
+  tags:
+    - bahguta-pro
+
+  resource_group: bahguta-production
+  interruptible: false
+
+  environment:
+    name: production
+
+  allow_failure: false
+
+  script:
+    - |
+      set -Eeuo pipefail
+
+      echo "========================================"
+      echo "  BAHGUTA HOMELAB - DEPLOY PRODUCTION"
+      echo "========================================"
+
+      PROJECT_DIR="${CI_PROJECT_DIR}"
+      POM="${PROJECT_DIR}/spring/bahguta-api/pom.xml"
+      TARGET_DIR="${PROJECT_DIR}/spring/bahguta-api/target"
+
+      DEPLOY_DIR="/opt/bahguta/spring"
+      DOCKERFILE="${DEPLOY_DIR}/Dockerfile"
+      COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.yml"
+      DEST_JAR="${DEPLOY_DIR}/bahguta-api.jar"
+
+      IMAGE="spring-bahguta:latest"
+      ROLLBACK_IMAGE="spring-bahguta:rollback"
+
+      echo ""
+      echo "Commit: ${CI_COMMIT_SHORT_SHA}"
+      echo "Rama: ${CI_COMMIT_REF_NAME}"
+
+      echo ""
+      echo "1. Comprobando archivos..."
+
+      test -f "${POM}"
+      test -f "${DOCKERFILE}"
+      test -f "${COMPOSE_FILE}"
+      test -w "${DEPLOY_DIR}"
+
+      echo "Archivos correctos."
+
+      echo ""
+      echo "2. Compilando Spring Boot..."
+
+      mvn -f "${POM}" clean package \
+        -Dmaven.test.skip=true \
+        -Dspring-boot.run.profiles=pro
+
+      mapfile -t JARS < <(find "${TARGET_DIR}" -maxdepth 1 \
+        -name 'bahguta-api-*.jar' ! -name '*-plain.jar')
+
+      if [[ ${#JARS[@]} -ne 1 ]]; then
+        echo "ERROR: se esperaba 1 JAR y hay ${#JARS[@]}."
+        exit 1
+      fi
+
+      SOURCE_JAR="${JARS[0]}"
+      test -s "${SOURCE_JAR}"
+
+      echo "Compilación correcta."
+      echo "JAR generado: $(basename "${SOURCE_JAR}")"
+
+      echo ""
+      echo "3. Copiando el JAR a producción..."
+
+      cp "${SOURCE_JAR}" "${DEST_JAR}.tmp"
+      mv "${DEST_JAR}.tmp" "${DEST_JAR}"
+
+      echo "JAR actualizado."
+
+      echo ""
+      echo "4. Validando Docker Compose..."
+
+      DC=(
+        docker compose
+        --project-directory "${DEPLOY_DIR}"
+        -f "${COMPOSE_FILE}"
+      )
+
+      "${DC[@]}" config --quiet
+
+      echo "Configuración Docker Compose correcta."
+
+      echo ""
+      echo "5. Guardando la imagen anterior..."
+
+      if docker image inspect "${IMAGE}" >/dev/null 2>&1; then
+        docker image tag "${IMAGE}" "${ROLLBACK_IMAGE}"
+        echo "Imagen anterior guardada para rollback."
+      else
+        echo "No existe una imagen anterior para recuperar."
+      fi
+
+      echo ""
+      echo "6. Construyendo la nueva imagen..."
+
+      if ! "${DC[@]}" build --no-cache bahguta; then
+        echo "ERROR: la construcción de Docker ha fallado."
+        exit 1
+      fi
+
+      echo "Imagen construida correctamente."
+
+      rollback() {
+        if docker image inspect "${ROLLBACK_IMAGE}" >/dev/null 2>&1; then
+          echo "Restaurando la imagen anterior..."
+
+          docker image tag "${ROLLBACK_IMAGE}" "${IMAGE}"
+
+          "${DC[@]}" up -d \
+            --no-deps \
+            --force-recreate \
+            --no-build \
+            bahguta || true
+        else
+          echo "No existe una imagen anterior para recuperar."
+        fi
+      }
+
+      echo ""
+      echo "7. Recreando exclusivamente el contenedor bahguta..."
+
+      if ! "${DC[@]}" up -d \
+        --no-deps \
+        --force-recreate \
+        --no-build \
+        bahguta; then
+
+        echo "ERROR: no se ha podido recrear el contenedor."
+        rollback
+        exit 1
+      fi
+
+      echo ""
+      echo "8. Comprobando el arranque de Spring Boot..."
+
+      READY=0
+
+      for ATTEMPT in $(seq 1 45); do
+        STATUS="$(docker inspect \
+          --format='{{.State.Status}}' \
+          bahguta 2>/dev/null || true)"
+
+        if [[ "${STATUS}" == "running" ]]; then
+          LOGS="$(docker logs bahguta 2>&1 || true)"
+
+          if [[ "${LOGS}" == *"Started BahgutaApiApplication"* ]]; then
+            READY=1
+            break
+          fi
+        elif [[ "${STATUS}" == "exited" || "${STATUS}" == "dead" ]]; then
+          break
+        fi
+
+        sleep 2
+      done
+
+      if [[ "${READY}" -ne 1 ]]; then
+        echo "ERROR: Spring Boot no ha arrancado correctamente."
+
+        docker logs --tail 100 bahguta || true
+
+        rollback
+
+        exit 1
+      fi
+
+      echo ""
+      echo "========================================"
+      echo "  DESPLIEGUE COMPLETADO CORRECTAMENTE"
+      echo "========================================"
+
+      docker ps \
+        --filter "name=^/bahguta$" \
+        --format 'table {{.Names}}\t{{.Status}}'
