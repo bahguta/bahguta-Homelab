@@ -5,6 +5,7 @@
 - Placa **ESP32-P4** con pantalla táctil de **800x1280**.
 - Controlador táctil **GSL3680** por I2C.
 - Core de Arduino para ESP32 **v3.1**.
+- Comprada en AliExpress: [placa ESP32-P4 de 10,1", táctil capacitiva, 1280x800 IPS, WiFi 6 / BT 5](https://a.aliexpress.com/_EG4yxeS).
 
 Pines usados (`bahguta-display/bahguta_display/pins_config.h`):
 
@@ -26,8 +27,8 @@ Notas:
 
 ## Sensores (ESP32-C3 + DHT22)
 
-- Placa **ESP32-C3 SuperMini**.
-- Sensor **DHT22** (temperatura y humedad) con la librería *DHT sensor library* de Adafruit.
+- Placa **ESP32-C3 SuperMini** ([AliExpress, 4 MB de flash](https://a.aliexpress.com/_EzPB0eq)).
+- Sensor **DHT22**, módulo AM2302 ([AliExpress](https://a.aliexpress.com/_EyuY5UI)), con la librería *DHT sensor library* de Adafruit.
 
 Conexión:
 
@@ -57,12 +58,26 @@ Solución usada en este proyecto: una placa *Battery Shield V3* para una pila 18
 
 ### Lista de materiales por nodo
 
-- 1 × ESP32-C3 SuperMini
-- 1 × sensor DHT22 (y resistencia pull-up de 10 kΩ si hace falta)
-- 1 × pila 18650
-- 1 × placa Battery Shield V3 (con interruptor NORMAL/HOLD)
-- Cables y caja
+| Pieza | Notas | Enlace |
+|---|---|---|
+| ESP32-C3 SuperMini | 4 MB de flash | [AliExpress](https://a.aliexpress.com/_EzPB0eq) |
+| Módulo DHT22 / AM2302 | Resistencia pull-up de 10 kΩ si el módulo no la lleva | [AliExpress](https://a.aliexpress.com/_EyuY5UI) |
+| Liitokala 18650, 3,7 V 3500 mAh (Lii-35A) | Una pila por nodo | [AliExpress](https://a.aliexpress.com/_Ew6MABu) |
+| Shield 18650 **V3** (una pila, 5 V/3 A, 3 V/1 A, Type-C / Micro USB) | Lleva el interruptor ON/OFF. El anuncio también vende la V8 de dos pilas: elige la opción V3 | [AliExpress](https://a.aliexpress.com/_EwmXslG) |
+| Cables, velcro o cinta, caja | | |
+
+> No he usado la versión de dos pilas (V8): sospecho que corta la salida en deep sleep, así que este proyecto usa la V3 de una pila con interuptor ON/OFF.
+
+Los enlaces son normales (sin afiliados); los anuncios y precios cambian, así que revisa las especificaciones antes de comprar.
+
+### Nodo terminado
+
+No es bonito (soldar no es lo mío), pero funciona: el nodo despierta, mide, envía la lectura y vuelve a deep sleep.
+
+<img src="../images/sensor-node.jpg" alt="Nodo sensor montado: ESP32-C3 SuperMini, DHT22 y shield de 18650 sujetos con velcro" width="300">
+
+*ESP32-C3 SuperMini (arriba), la 18650 en el shield y el DHT22 a la derecha. La etiqueta indica de qué habitación es el nodo.*
 
 ## Servidor
 
-Cualquier máquina Linux con Docker y unos 2 GB de RAM libres para el backend y PostgreSQL. En el proyecto original funciona en un mini PC.
+Cualquier máquina Linux con Docker y unos 2 GB de RAM libres para el backend y PostgreSQL. En el proyecto original funciona en un [mini PC industrial sin ventilador XCY](https://a.aliexpress.com/_EJ5ZPrk) (Intel Core i5-5200U, 8 GB RAM, 128 GB SSD, doble GbE): silencioso, de bajo consumo y siempre encendido.
