@@ -110,6 +110,9 @@ flowchart LR
 - **Sensores:** ESP32-C3 SuperMini con sensor DHT22 (humedad y temperatura), alimentados con pilas 18650.
 - **Servidor:** cualquier máquina Linux con Docker (en mi caso, un mini PC).
 
+Lista de piezas con enlaces, dónde lo compré todo y foto de un nodo terminado: [docs/es/HARDWARE.md](docs/es/HARDWARE.md).
+
+
 ## Puesta en marcha
 
 ### 1. Backend
