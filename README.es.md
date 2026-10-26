@@ -9,6 +9,8 @@
 
 Panel de control para tu casa y tu homelab: una **tablet con ESP32-P4** que muestra en tiempo real la temperatura y humedad de cada habitación, el tiempo, el estado de tus contenedores Docker, la red y mucho más, alimentada por un **backend Spring Boot** y por **sensores ESP32-C3** a pilas repartidos por la casa.
 
+El mismo panel está disponible también como **aplicación web** (Angular) que puedes abrir en cualquier navegador o instalar en el móvil.
+
 Todo funciona en tu red local, sin nube y con tus propios datos.
 
 > **Estado:** versión 1.0.0, en uso diario en mi casa. Es un proyecto personal que comparto con la comunidad: úsalo, adáptalo y mejóralo.
@@ -19,10 +21,11 @@ Todo funciona en tu red local, sin nube y con tus propios datos.
 |---|---|---|
 | Backend | [`spring/`](spring/) | API REST con Spring Boot 3.5 (Java 21), PostgreSQL, Flyway y Swagger UI |
 | Tablet | [`bahguta-display/`](bahguta-display/) | Firmware de la pantalla ESP32-P4 (800x1280, táctil) con interfaz LVGL |
+| Web | [`bahguta_spa/`](bahguta_spa/) | PWA en Angular servida por nginx: las mismas pantallas en el navegador o en el móvil. Ver su [README](bahguta_spa/README.es.md) |
 | Sensores | [`bahguta-firmware/`](bahguta-firmware/) | Firmware de los nodos ESP32-C3 con sensor DHT22 |
 | Infraestructura | [`compose/`](compose/), [`config/`](config/) | Docker Compose de PostgreSQL (y un broker MQTT Mosquitto opcional, aún sin uso) y su configuración |
 | Utilidades | [`scripts/`](scripts/) | Scripts auxiliares: arrancar/parar PostgreSQL y listar/arrancar/parar contenedores Docker |
-| Documentación | [`docs/es/`](docs/es/) | Guías detalladas (API, base de datos, hardware, red) |
+| Documentación | [`docs/es/`](docs/es/) | Guías detalladas (API, base de datos, hardware, red, despliegue) |
 
 ## Qué hace la tablet
 
@@ -98,11 +101,13 @@ flowchart LR
     API -->|"red"| OM["Omada"]
     API -->|"contenedores"| DOCKER["Docker"]
     TAB["Tablet ESP32-P4<br/>LVGL"] -->|"HTTP cada 30 s"| API
+    WEB["Web<br/>Angular + nginx"] -->|"HTTP cada 30 s"| API
 ```
 
 - Los **sensores** miden temperatura y humedad, se registran en el backend y envían sus mediciones por HTTP. Funcionan a pilas 18650 y duermen entre mediciones para ahorrar batería.
 - El **backend** guarda las mediciones, gestiona dispositivos y sensores y agrega todo en un único JSON de dashboard.
 - La **tablet** consulta ese dashboard periódicamente y dibuja la interfaz.
+- La **web** hace lo mismo desde el navegador. Su nginx reenvía la API y añade él mismo la clave de Docker, así que la clave nunca llega al navegador.
 
 ## Hardware
 
@@ -182,6 +187,21 @@ Cada sensor necesita su propio `Config.h` (nombre, ubicación e IP distintos). `
 4. Sube la carpeta `data/` (iconos y animaciones del tiempo) al sistema de ficheros **LittleFS** de la tablet.
 5. En el primer arranque, entra en **Ajustes** y configura el WiFi y la URL del backend (por ejemplo `http://bahguta.local`).
 
+### 4. Web (opcional)
+
+Requisitos: el backend en marcha y Docker.
+
+```bash
+mkdir -p /opt/bahguta/web && cd /opt/bahguta/web
+cp ~/bahguta-homelab/bahguta_spa/docker-compose.example.yml docker-compose.yml
+cp ~/bahguta-homelab/bahguta_spa/.env.example .env    # BACKEND_URL y el mismo BAHGUTA_API_KEY que el backend
+printf 'admin:%s\n' "$(openssl passwd -apr1)" > htpasswd   # usuario y contraseña para el control de Docker
+docker build -t bahguta-web:latest ~/bahguta-homelab/bahguta_spa
+docker compose up -d
+```
+
+Guía completa (desarrollo, configuración y seguridad): [bahguta_spa/README.es.md](bahguta_spa/README.es.md).
+
 ## Seguridad: léelo antes de exponer nada
 
 Este proyecto está pensado para una **red local de confianza**:
@@ -190,12 +210,15 @@ Este proyecto está pensado para una **red local de confianza**:
 - Los endpoints que arrancan y paran contenedores están protegidos: exigen la cabecera `X-API-Key` y solo actúan sobre los contenedores de `DOCKER_ALLOWED`.
 - El backend **no** monta `/var/run/docker.sock`. Habla con Docker a través de un proxy (`docker-proxy`) que solo permite listar, arrancar y parar contenedores, así que un backend comprometido no puede convertirse en administrador del servidor. Detalles en [docs/es/NETWORK.md](docs/es/NETWORK.md#docker-contenedores).
 - La clave viaja por HTTP sin cifrar: evita que otros equipos llamen a esos endpoints, pero no que alguien espíe tu red.
+- La web pide usuario y contraseña (Basic auth de nginx) solo en la ruta de control de Docker. El resto de su `/api/` se reenvía **sin autenticación**, así que mantenla también en tu red local. Detalles en [bahguta_spa/README.es.md](bahguta_spa/README.es.md#seguridad).
 - El broker MQTT de ejemplo permite conexiones anónimas.
 - Nunca subas tu `.env`, tu `Config.h`, tu `Secrets.h` ni claves a un repositorio. Los ficheros `*.example` son las plantillas.
 
 ## Despliegue continuo (opcional)
 
-El repositorio incluye un `.gitlab-ci.yml` que compila el backend y lo despliega con Docker Compose en el servidor, con rollback automático si Spring Boot no arranca. Requiere un runner de GitLab con acceso a Docker en la máquina de destino.
+El repositorio incluye un `.gitlab-ci.yml` con dos jobs que despliegan en el servidor con Docker Compose y hacen rollback automático si la nueva versión no arranca: uno para el backend (cambios en `spring/`) y otro para la web (cambios en `bahguta_spa/`). Requieren un runner de GitLab con acceso a Docker en la máquina de destino y, en el servidor, las carpetas `/opt/bahguta/spring` (el contenido de `spring/`) y `/opt/bahguta/web` (ver el [README de la web](bahguta_spa/README.es.md#despliegue)).
+
+El pipeline solo funciona en GitLab. Si alojas tu copia en GitHub se ignora: despliega a mano con los pasos de arriba, o adáptalo a GitHub Actions. Estructura del servidor y requisitos: [docs/es/DEPLOYMENT.md](docs/es/DEPLOYMENT.md).
 
 ## Contribuir
 

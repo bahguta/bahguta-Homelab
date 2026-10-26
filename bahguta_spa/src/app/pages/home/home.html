@@ -1,0 +1,66 @@
+<h1>Home</h1>
+
+<div class="page" [class.loading]="!loaded()">
+  @if (weather(); as w) {
+    <a class="hero" [class.night]="w.night" routerLink="/weather">
+      @if (w.scene; as sc) { <app-weather-bg [scene]="sc" /> }
+      <div class="htop">
+        <div class="info">
+          <div class="temp">{{ w.c.temperature | number: '1.0-0' }}°</div>
+          <div class="desc">{{ w.c.description }} · {{ w.c.location }}</div>
+          <div class="minmax">
+            Mín {{ w.c.minTemperature | number: '1.0-0' }}° · Máx {{ w.c.maxTemperature | number: '1.0-0' }}°
+          </div>
+        </div>
+        @if (!w.scene) {
+          <div class="iconwrap">
+          <img class="icon" [src]="w.icon" [alt]="w.c.description" />
+        </div>
+        }
+      </div>
+
+      <dl class="facts">
+        <div><dt>Sensación</dt><dd>{{ w.c.feelsLike | number: '1.0-0' }}°</dd></div>
+        <div><dt>Humedad</dt><dd>{{ w.c.humidity }}%</dd></div>
+        <div><dt>Viento</dt><dd>{{ w.wind }}</dd></div>
+        <div><dt>Presión</dt><dd>{{ w.c.pressure }} hPa</dd></div>
+        <div><dt>Nubes</dt><dd>{{ w.c.clouds }}%</dd></div>
+        <div><dt>Sol</dt><dd>{{ w.sunrise }} – {{ w.sunset }}</dd></div>
+      </dl>
+    </a>
+  } @else {
+    <div class="hero empty">Sin datos del tiempo</div>
+  }
+
+  <section class="grid">
+    @for (c of cards(); track c.route) {
+      <a class="card" [routerLink]="c.route">
+        <div class="top">
+          <span class="chip">{{ c.icon }}</span>
+          <span class="title">{{ c.title }}</span>
+        </div>
+
+        <div class="main">
+          <div class="value">{{ c.value }}</div>
+          <div class="detail">{{ c.detail }}</div>
+        </div>
+
+        <div class="extra">
+          @for (l of c.lines; track $index) {
+            <div class="line">{{ l }}</div>
+          }
+          @if (c.progress !== undefined) {
+            <div class="bar">
+              <div
+                class="fill"
+                [class.warn]="c.progress >= 75"
+                [class.danger]="c.progress >= 90"
+                [style.width.%]="c.progress"
+              ></div>
+            </div>
+          }
+        </div>
+      </a>
+    }
+  </section>
+</div>

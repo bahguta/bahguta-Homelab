@@ -1,0 +1,45 @@
+.gauges, .info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-top: 12px;
+}
+.info { margin-top: 20px; }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.gauge {
+  --c: var(--accent);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(150px, 16vw, 210px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--surface-2) 0);
+  transition: background 0.4s;
+
+  &.warn { --c: var(--warn); }
+  &.danger { --c: var(--danger); }
+  &::before { content: ''; position: absolute; inset: 14px; border-radius: 50%; background: var(--surface); }
+  span { position: relative; font-size: 2.4rem; font-weight: 700; }
+}
+
+.label { color: var(--muted); font-size: 1.05rem; }
+
+.info .card {
+  align-items: flex-start;
+  b { font-size: 1.8rem; }
+  small, .k { color: var(--muted); }
+  ul { margin: 0; padding: 0; list-style: none; line-height: 1.7; }
+}
+.empty { color: var(--muted); }

@@ -6,12 +6,13 @@ Open ideas for the project. They are not commitments and have no dates: they are
 
 - **Battery level** of each sensor, measured on the ESP32-C3 and shown on the tablet (Devices and House screens).
 - **Intervals editable from the tablet**: sensor measurement interval and REST refresh.
-- **Unify Device and Sensor** in the interface and fix devices that show as *online* when they no longer are.
+- **Unify Device and Sensor** in the tablet interface (the web app already shows them on one screen) and fix devices that show as *online* when they no longer are.
 
 ## Security
 
 - API authentication for the rest of the endpoints (today only the Docker start/stop ones require a key); for example, one key per device and another for the tablet.
-- HTTPS between the tablet and the backend, so keys do not travel in plain text.
+- HTTPS between the tablet, the web app and the backend, so keys and the web's password do not travel in plain text.
+- Authenticate the write endpoints (settings, device registration, measurements) that the web app's nginx forwards without a key.
 - Make the devices' `secret_key` a real secret rather than the room name.
 - Authentication on the MQTT broker if it ends up being used.
 
@@ -21,7 +22,8 @@ Open ideas for the project. They are not commitments and have no dates: they are
 - More sensor types (BME280, soil, rain, PIR, relays): the database schema already supports them.
 - More interface languages on the tablet.
 - Photos and screenshots in the documentation, and a step-by-step build guide.
-- Automated backend tests and a firmware build pipeline.
+- Automated tests for the backend and the web app, and a firmware build pipeline.
+- Translate the web app's interface (today only Spanish).
 
 ## Done
 
@@ -31,3 +33,4 @@ Open ideas for the project. They are not commitments and have no dates: they are
 - Project version shown on the tablet, taken from the backend.
 - Continuous deployment with GitLab CI and automatic rollback.
 - Docker control hardened: API key on start/stop, allow-list of containers and a restricted Docker socket proxy instead of mounting `docker.sock`.
+- Web app (Angular PWA) with the same screens as the tablet, served by nginx and deployed by its own pipeline job.

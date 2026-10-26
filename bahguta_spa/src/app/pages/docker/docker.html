@@ -1,0 +1,47 @@
+<header class="head">
+  <h1>Docker</h1>
+  <span class="count"><b class="ok">{{ running() }}</b> en marcha · {{ total() }} en total</span>
+</header>
+
+<div class="toolbar">
+  <div class="seg">
+    <button type="button" [class.on]="filter() === 'all'" (click)="filter.set('all')">Todos</button>
+    <button type="button" [class.on]="filter() === 'running'" (click)="filter.set('running')">En marcha</button>
+    <button type="button" [class.on]="filter() === 'stopped'" (click)="filter.set('stopped')">Parados</button>
+  </div>
+  <input
+    type="search"
+    placeholder="Buscar contenedor…"
+    [value]="query()"
+    (input)="query.set($any($event.target).value)"
+  />
+</div>
+
+@if (error(); as e) {
+  <div class="error" role="alert">
+    {{ e }}
+    <button type="button" (click)="error.set(null)" aria-label="Cerrar">✕</button>
+  </div>
+}
+
+<section class="grid">
+  @for (c of visible(); track c.id) {
+    <article class="card" [class.up]="c.state === 'running'">
+      <div class="info">
+        <h2><span class="dot"></span>{{ c.name }}</h2>
+        <p>{{ c.status }}</p>
+      </div>
+      <button
+        type="button"
+        class="action"
+        [class.stop]="c.state === 'running'"
+        [disabled]="isBusy(c.id)"
+        (click)="toggle(c)"
+      >
+        @if (isBusy(c.id)) { … } @else { {{ c.state === 'running' ? 'Parar' : 'Iniciar' }} }
+      </button>
+    </article>
+  } @empty {
+    <p class="empty">No hay contenedores que coincidan.</p>
+  }
+</section>

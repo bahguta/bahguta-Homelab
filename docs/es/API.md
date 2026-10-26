@@ -6,7 +6,7 @@ Base: `http://TU_SERVIDOR:8080`. La documentación interactiva (Swagger UI) est�
 
 ## Endpoints
 
-### Dashboard (lo que consulta la tablet)
+### Dashboard (lo que consultan la tablet y la web)
 
 | Método | Ruta | Descripción |
 |---|---|---|
@@ -57,7 +57,7 @@ Base: `http://TU_SERVIDOR:8080`. La documentación interactiva (Swagger UI) est�
 | GET | `/api/v1/system/docker/container/list` | Contenedores Docker |
 | POST | `/api/v1/system/docker/container/{id}/start` | Arranca un contenedor |
 | POST | `/api/v1/system/docker/container/{id}/stop` | Para un contenedor |
-| — | `/api/v1/settings` | Ajustes de la aplicación (franjas horarias del tiempo, etc.) |
+| POST / PUT / PATCH | `/api/v1/settings` | Actualiza los ajustes de la aplicación (franjas horarias del tiempo, etc.). No hay `GET`: los valores actuales llegan en el campo `config` de `/api/v1/dashboard/data` |
 
 Los endpoints de `docker` ejecutan comandos reales en el servidor: **no los expongas fuera de tu red**.
 
@@ -78,6 +78,8 @@ curl -X POST -H "X-API-Key: $BAHGUTA_API_KEY" \
 | `403` | El contenedor no está en `DOCKER_ALLOWED` |
 
 En [NETWORK.md](NETWORK.md#docker-contenedores) se explica cómo se protege el acceso a Docker.
+
+La web no envía la clave desde el navegador: su nginx añade `X-API-Key` y pide usuario y contraseña en `/api/v1/system/docker/`. Todo lo demás bajo `/api/` se reenvía tal cual, incluidos los endpoints de escritura (`settings`, `devices/register`, `measurements/register`).
 
 ## Ejemplos
 

@@ -1,0 +1,40 @@
+<header class="head">
+  <h1>Casa</h1>
+  @if (summary(); as s) {
+    <span class="avg">
+      Media {{ (s.avgTemperature | number: '1.1-1') ?? '—' }}° ·
+      {{ (s.avgHumidity | number: '1.0-0') ?? '—' }}%
+    </span>
+  }
+</header>
+
+<section class="rooms">
+  @for (r of rooms(); track r.room) {
+    <div class="room" [class.stale]="r.stale" [style.--room-color]="colors()[r.room]">
+      <div class="name"><span class="dot"></span>{{ r.room }}</div>
+      <div class="temp">{{ (r.temperature | number: '1.1-1') ?? '—' }}<small>°</small></div>
+      <div class="meta">
+        <span>💧 {{ (r.humidity | number: '1.0-0') ?? '—' }}%</span>
+        <span class="ago">{{ ago(r.lastMeasurement) }}</span>
+      </div>
+    </div>
+  }
+</section>
+
+<section class="chartcard">
+  <div class="chart-head">
+    <h2>Histórico · últimas {{ hours() }} h</h2>
+    <div class="seg">
+      <button type="button" [class.on]="metric() === 't'" (click)="metric.set('t')">Temperatura</button>
+      <button type="button" [class.on]="metric() === 'h'" (click)="metric.set('h')">Humedad</button>
+    </div>
+  </div>
+
+  <div class="chart-body">
+    @if (hasHistory()) {
+      <app-room-chart [rooms]="series()" [metric]="metric()" [colors]="colors()" />
+    } @else {
+      <p class="empty">{{ historyError() ? 'No se pudo cargar el histórico' : 'Sin datos de histórico' }}</p>
+    }
+  </div>
+</section>

@@ -1,48 +1,57 @@
-# Logs
-logs/
 
-# Copias de seguridad
-backups/
-
-# Archivos temporales
-*.log
-*.tmp
-*.swp
-
-# Java
-target/
+!**/.env.example
+!.env.example
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/mcp.json
+!.vscode/settings.json
+!.vscode/tasks.json
 *.class
-*.jar
-*.war
-
-# IDEs
-.idea/
-.vscode/
 *.iml
-
-# Sistema
+*.jar
+*.launch
+*.log
+*.sublime-workspace
+*.swp
+*.tmp
+*.war
+.c9/
+.classpath
 .DS_Store
+.factorypath
+.history/*
+.idea/
+.pio/
+.project
+.sass-cache/
+.settings/
+.vscode/
+.vscode/*
+/.angular/cache
+/bazel-out
+/connect.lock
+/coverage
+/data/
+/dist
+/libpeerconnection.log
+/node_modules
+/out-tsc
+/tmp
+/typings
+__screenshots__/
+backups/
+build/
+logs/
+npm-debug.log
+target/
+testem.log
 Thumbs.db
+yarn-error.log
 
 # Variables sensibles
 .env
 .env.*
-!.env.example
-!**/.env.example
 application-local.yml
-bahguta-firmware/bahguta-firmware/include/Config.h
+bahguta_spa/proxy.conf.json
 bahguta-display/bahguta_display/src/ui/Secrets.h
-
-# IDEs de Java/Eclipse (en el raiz y en subcarpetas)
-.project
-.classpath
-.settings/
-.factorypath
-
-# PlatformIO / build
-.pio/
-build/
-
-# Datos de los contenedores (PostgreSQL, etc.): nunca al repositorio
-/data/
-
+bahguta-firmware/bahguta-firmware/include/Config.h

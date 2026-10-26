@@ -81,3 +81,5 @@ No es bonito (soldar no es lo mío), pero funciona: el nodo despierta, mide, env
 ## Servidor
 
 Cualquier máquina Linux con Docker y unos 2 GB de RAM libres para el backend y PostgreSQL. En el proyecto original funciona en un [mini PC industrial sin ventilador XCY](https://a.aliexpress.com/_EJ5ZPrk) (Intel Core i5-5200U, 8 GB RAM, 128 GB SSD, doble GbE): silencioso, de bajo consumo y siempre encendido.
+
+¿Has montado el tuyo? Abre un PR con tus fotos y notas.

@@ -6,7 +6,7 @@ Base URL: `http://YOUR_SERVER:8080`. Interactive documentation (Swagger UI) is a
 
 ## Endpoints
 
-### Dashboard (what the tablet polls)
+### Dashboard (what the tablet and the web app poll)
 
 | Method | Path | Description |
 |---|---|---|
@@ -57,7 +57,7 @@ Base URL: `http://YOUR_SERVER:8080`. Interactive documentation (Swagger UI) is a
 | GET | `/api/v1/system/docker/container/list` | Docker containers |
 | POST | `/api/v1/system/docker/container/{id}/start` | Starts a container |
 | POST | `/api/v1/system/docker/container/{id}/stop` | Stops a container |
-| — | `/api/v1/settings` | Application settings (weather time slots, etc.) |
+| POST / PUT / PATCH | `/api/v1/settings` | Updates the application settings (weather time slots, etc.). There is no `GET`: the current values come in the `config` field of `/api/v1/dashboard/data` |
 
 The `docker` endpoints run real commands on the server: **do not expose them outside your network**.
 
@@ -78,6 +78,8 @@ curl -X POST -H "X-API-Key: $BAHGUTA_API_KEY" \
 | `403` | The container is not in `DOCKER_ALLOWED` |
 
 See [NETWORK.md](NETWORK.md#docker-containers) for how the access to Docker is protected.
+
+The web app does not send the key from the browser: its nginx adds `X-API-Key` and asks for a user and password on `/api/v1/system/docker/`. Everything else under `/api/` is forwarded as is, including the write endpoints (`settings`, `devices/register`, `measurements/register`).
 
 ## Examples
 

@@ -1,0 +1,26 @@
+# Ejemplo de despliegue de la web / Example web deployment.
+# Cópialo al servidor (p. ej. /opt/bahguta/web/docker-compose.yml) junto a:
+#   .env      -> a partir de .env.example
+#   htpasswd  -> usuario y contraseña de la web (ver README)
+# Copy it to the server (e.g. /opt/bahguta/web/docker-compose.yml) next to:
+#   .env      -> from .env.example
+#   htpasswd  -> web user and password (see README)
+#
+# La imagen se construye con:  docker build -t bahguta-web:latest bahguta_spa
+# Build the image with:        docker build -t bahguta-web:latest bahguta_spa
+services:
+  bahguta-web:
+    image: bahguta-web:latest
+    container_name: bahguta-web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"            # cambia el puerto de la izquierda si el 80 está ocupado / change if port 80 is taken
+    volumes:
+      - ./htpasswd:/etc/nginx/.htpasswd:ro
+    networks:
+      - web
+
+networks:
+  web:
+    external: true         # la misma red que usa el backend / same network as the backend

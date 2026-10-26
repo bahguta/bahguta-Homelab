@@ -18,7 +18,7 @@ services:
       - ../data/mosquitto:/mosquitto/data
 
     networks:
-      - bahguta
+      - web
 
     healthcheck:
       test: ["CMD-SHELL", "pidof mosquitto || exit 1"]
@@ -27,5 +27,5 @@ services:
       retries: 3
 
 networks:
-  bahguta:
+  web:
     external: true

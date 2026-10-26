@@ -9,6 +9,12 @@ stages:
 deploy_production:
   stage: deploy
 
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - spring/**/*
+        - .gitlab-ci.yml
+
   tags:
     - bahguta-pro
 
@@ -188,3 +194,175 @@ deploy_production:
       docker ps \
         --filter "name=^/bahguta$" \
         --format 'table {{.Names}}\t{{.Status}}'
+
+
+
+
+
+deploy_web:
+  stage: deploy
+
+  tags:
+    - bahguta-pro
+
+  resource_group: bahguta-web-production
+  interruptible: false
+
+  environment:
+    name: production-web
+
+  allow_failure: false
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - bahguta_spa/**/*
+        - .gitlab-ci.yml
+
+  script:
+    - |
+      set -Eeuo pipefail
+
+      echo "========================================"
+      echo "  BAHGUTA WEB - DEPLOY PRODUCTION"
+      echo "========================================"
+
+      SPA_DIR="${CI_PROJECT_DIR}/bahguta_spa"
+      DEPLOY_DIR="/opt/bahguta/web"
+      COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.yml"
+
+      IMAGE="bahguta-web:latest"
+      ROLLBACK_IMAGE="bahguta-web:rollback"
+
+      echo ""
+      echo "Commit: ${CI_COMMIT_SHORT_SHA}"
+      echo "Rama: ${CI_COMMIT_REF_NAME}"
+
+      echo ""
+      echo "1. Comprobando archivos..."
+
+      MISSING=0
+      check() { [[ -e "$1" ]] || { echo "FALTA: $1"; MISSING=1; }; }
+
+      check "${SPA_DIR}/Dockerfile"
+      check "${SPA_DIR}/package-lock.json"
+      check "${SPA_DIR}/nginx/default.conf.template"
+      check "${COMPOSE_FILE}"
+
+      # Fichero de usuarios de la web (se crea a mano en el servidor; si no existe, Docker crearía una carpeta)
+      [[ -f "${DEPLOY_DIR}/htpasswd" ]] || { echo "FALTA: ${DEPLOY_DIR}/htpasswd (usuario y contraseña de la web)"; MISSING=1; }
+
+      if [[ ! -r "${DEPLOY_DIR}/.env" ]]; then
+        echo "NO SE PUEDE LEER: ${DEPLOY_DIR}/.env (el job corre como: $(id -un))"
+        MISSING=1
+      fi
+
+      if [[ "${MISSING}" -ne 0 ]]; then
+        echo "ERROR: faltan archivos o permisos (ver arriba)."
+        echo "Contenido del proyecto en el runner:"
+        ls -la "${CI_PROJECT_DIR}" || true
+        exit 1
+      fi
+
+      DC=(
+        docker compose
+        --project-directory "${DEPLOY_DIR}"
+        -f "${COMPOSE_FILE}"
+      )
+
+      "${DC[@]}" config --quiet
+
+      echo "Archivos correctos."
+
+      echo ""
+      echo "2. Guardando la imagen anterior..."
+
+      if docker image inspect "${IMAGE}" >/dev/null 2>&1; then
+        docker image tag "${IMAGE}" "${ROLLBACK_IMAGE}"
+        echo "Imagen anterior guardada para rollback."
+      else
+        echo "No existe una imagen anterior para recuperar."
+      fi
+
+      echo ""
+      echo "3. Construyendo la imagen (Angular se compila dentro de Docker)..."
+
+      if ! docker build --pull -t "${IMAGE}" "${SPA_DIR}"; then
+        echo "ERROR: la construcción de Docker ha fallado."
+        exit 1
+      fi
+
+      echo "Imagen construida correctamente."
+
+      rollback() {
+        if docker image inspect "${ROLLBACK_IMAGE}" >/dev/null 2>&1; then
+          echo "Restaurando la imagen anterior..."
+
+          docker image tag "${ROLLBACK_IMAGE}" "${IMAGE}"
+
+          "${DC[@]}" up -d \
+            --no-deps \
+            --force-recreate \
+            --no-build \
+            bahguta-web || true
+        else
+          echo "No existe una imagen anterior para recuperar."
+        fi
+      }
+
+      echo ""
+      echo "4. Recreando exclusivamente el contenedor bahguta-web..."
+
+      if ! "${DC[@]}" up -d \
+        --no-deps \
+        --force-recreate \
+        --no-build \
+        bahguta-web; then
+
+        echo "ERROR: no se ha podido recrear el contenedor."
+        rollback
+        exit 1
+      fi
+
+      echo ""
+      echo "5. Comprobando que nginx responde..."
+
+      READY=0
+
+      for ATTEMPT in $(seq 1 20); do
+        if docker exec bahguta-web wget -q -O /dev/null http://127.0.0.1/; then
+          READY=1
+          break
+        fi
+
+        sleep 2
+      done
+
+      if [[ "${READY}" -ne 1 ]]; then
+        echo "ERROR: nginx no responde."
+
+        docker logs --tail 100 bahguta-web || true
+
+        rollback
+
+        exit 1
+      fi
+
+      # Aviso (no falla el despliegue): comprueba que llega al backend
+      if docker exec bahguta-web wget -q -O /dev/null http://127.0.0.1/api/v1/dashboard/data; then
+        echo "El backend responde a través de nginx."
+      else
+        echo "AVISO: nginx está arriba pero el backend no responde (¿BACKEND_URL?)."
+      fi
+
+      # Limpia las capas intermedias de la compilación (solo imágenes sin etiqueta)
+      docker image prune -f >/dev/null || true
+
+      echo ""
+      echo "========================================"
+      echo "  DESPLIEGUE COMPLETADO CORRECTAMENTE"
+      echo "========================================"
+
+      docker ps \
+        --filter "name=^/bahguta-web$" \
+        --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

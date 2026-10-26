@@ -1,0 +1,29 @@
+<header class="head">
+  <h1>Red</h1>
+  <span class="count">{{ total() }} equipos conectados</span>
+</header>
+
+<input
+  type="search"
+  placeholder="Buscar por nombre, IP o MAC…"
+  [value]="query()"
+  (input)="query.set($any($event.target).value)"
+/>
+
+@if (available()) {
+  <div class="table">
+    <div class="tr th"><span>Nombre</span><span>IP</span><span>MAC</span><span>Tipo</span></div>
+    @for (c of clients(); track c.mac) {
+      <div class="tr">
+        <span class="name">{{ c.name }}</span>
+        <span class="mono">{{ c.ip }}</span>
+        <span class="mono">{{ c.mac }}</span>
+        <span>{{ icon(c.type) }} {{ c.type }}</span>
+      </div>
+    } @empty {
+      <p class="empty">Ningún equipo coincide.</p>
+    }
+  </div>
+} @else {
+  <p class="empty">Sin datos de la red (Omada).</p>
+}
