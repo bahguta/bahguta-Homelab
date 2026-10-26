@@ -1,0 +1,62 @@
+server {
+  listen 80;
+  server_name _;
+
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # DNS de Docker: vuelve a resolver "bahguta" cada pocos segundos. Así, cuando el pipeline
+  # recrea el contenedor del backend (IP nueva), no hay que reiniciar este nginx (evita el 502).
+  resolver 127.0.0.11 valid=10s ipv6=off;
+  set $backend ${BACKEND_URL};
+
+  # Control de contenedores: solo aquí nginx añade la X-API-Key (nunca viaja en el código de la SPA).
+  location /api/v1/system/docker/ {
+    # Usuario y contraseña de la web (fichero htpasswd montado desde el servidor, fuera del repo)
+    auth_basic "Bahguta - control de contenedores";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+
+    proxy_pass $backend;
+    proxy_set_header Authorization "";   # la contraseña de la web no se reenvía al backend
+    proxy_set_header X-API-Key "${BAHGUTA_API_KEY}";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 30s;
+  }
+
+  # Resto de la API (solo lectura): sin clave.
+  location /api/ {
+    proxy_pass $backend;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 30s;
+  }
+
+  # PWA: el service worker y su lista de versiones NO se pueden cachear, o las actualizaciones no llegan.
+  location ~ ^/(ngsw-worker\.js|ngsw\.json)$ {
+    add_header Cache-Control "no-cache";
+    try_files $uri =404;
+  }
+
+  location = /manifest.webmanifest {
+    types { }
+    default_type application/manifest+json;
+    add_header Cache-Control "no-cache";
+    try_files $uri =404;
+  }
+
+  # Ficheros con hash en el nombre: caché larga.
+  location ~* \.(js|css|svg|png|ico|woff2?)$ {
+    expires 30d;
+    add_header Cache-Control "public, immutable";
+    try_files $uri =404;
+  }
+
+  # SPA: cualquier ruta devuelve index.html (sin caché).
+  location / {
+    add_header Cache-Control "no-cache";
+    try_files $uri $uri/ /index.html;
+  }
+}

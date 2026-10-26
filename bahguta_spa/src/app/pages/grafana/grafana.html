@@ -1,0 +1,36 @@
+<h1>Grafana</h1>
+
+@if (vm(); as g) {
+  <section class="disks">
+    @for (d of g.disks; track d.name) {
+      <article class="card">
+        <header>
+          <h2>{{ d.name }}</h2>
+          <span>{{ d.total | number: '1.0-0' }} GB</span>
+        </header>
+
+        <div class="bar">
+          <div class="used" [class]="'used ' + d.lvl" [style.width.%]="d.pct"></div>
+          <div class="free"></div>
+        </div>
+
+        <footer>
+          <span><i class="dot used" [class]="'dot ' + d.lvl"></i>Ocupado {{ d.used | number: '1.0-1' }} GB ({{ d.pct | number: '1.0-0' }}%)</span>
+          <span><i class="dot free"></i>Libre {{ d.free | number: '1.0-1' }} GB</span>
+        </footer>
+      </article>
+    }
+  </section>
+
+  <section class="card metrics">
+    @for (m of g.metrics; track m.label) {
+      <div class="row">
+        <span class="name">{{ m.label }}</span>
+        <div class="track"><div [class]="'fill ' + m.lvl" [style.width.%]="m.value"></div></div>
+        <b>{{ m.text }}</b>
+      </div>
+    }
+  </section>
+} @else {
+  <p class="empty">Sin métricas de Grafana.</p>
+}

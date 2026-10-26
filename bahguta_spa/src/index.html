@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bahguta Homelab</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f1419" />
+    <link rel="icon" type="image/x-icon" href="icon-192.ico" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <script>
+      // Chrome/Edge lanzan este evento una sola vez y puede ser antes de que arranque Angular: se guarda aquí.
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__bip = e;
+        window.dispatchEvent(new Event('bip-ready'));
+      });
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+    <noscript>Esta aplicación necesita JavaScript.</noscript>
+  </body>
+</html>

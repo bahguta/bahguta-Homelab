@@ -7,7 +7,7 @@ Thanks for your interest! 🇪🇸 *Puedes escribir issues y pull requests en es
 - **Report a bug** or ask a question: open an [issue](../../issues) using the templates.
 - **Suggest an improvement:** see the [roadmap](docs/ROADMAP.md) for open ideas.
 - **Improve the documentation:** fixes, screenshots, build guides and translations are very welcome.
-- **Send code:** backend (Java), tablet firmware (C++/LVGL) or sensor firmware (C++/PlatformIO).
+- **Send code:** backend (Java), tablet firmware (C++/LVGL), sensor firmware (C++/PlatformIO) or the web app (Angular/TypeScript).
 
 ## Before you start
 
@@ -22,6 +22,7 @@ Thanks for your interest! 🇪🇸 *Puedes escribir issues y pull requests en es
 | `spring/bahguta-api` | Spring Boot backend (Java 21) | `mvn clean package` |
 | `bahguta-display/bahguta_display` | ESP32-P4 tablet firmware (Arduino core 3.1, LVGL) | Arduino IDE / arduino-cli |
 | `bahguta-firmware/bahguta-firmware` | ESP32-C3 sensor firmware | `pio run` |
+| `bahguta_spa` | Angular web app (PWA) | `npm ci && npm run build` |
 
 ## Guidelines
 
@@ -29,11 +30,12 @@ Thanks for your interest! 🇪🇸 *Puedes escribir issues y pull requests en es
 - **Database changes** go in a new Flyway migration (`V4__...sql`); never edit an applied one.
 - **Backend:** follow the existing package structure (`controller`, `service`, `dto`, `mapper`, `entity`, `repository`).
 - **Firmware:** keep UI code responsive (no blocking calls in LVGL callbacks) and test on real hardware when you can; say in the PR what you tested on.
+- **Web app:** standalone components and signals, as in the existing code. Never put API keys in the app: nginx (production) and `proxy.conf.json` (development) add them.
 - **Documentation:** if you change behaviour, config or endpoints, update the README or `docs/`.
 
 ## Pull request checklist
 
-- [ ] It builds (`mvn package` / `pio run` / Arduino compile) for the part you changed.
+- [ ] It builds (`mvn package` / `pio run` / Arduino compile / `npm run build`) for the part you changed.
 - [ ] No secrets, personal data or local paths.
 - [ ] Docs updated if needed.
 - [ ] You described what changed and how you tested it.

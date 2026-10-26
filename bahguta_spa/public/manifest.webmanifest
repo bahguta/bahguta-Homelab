@@ -1,0 +1,22 @@
+{
+  "name": "Bahguta Homelab",
+  "short_name": "Bahguta",
+  "description": "Panel del homelab: tiempo, casa, Docker, dispositivos, red y sistema.",
+  "lang": "es",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Tiempo", "url": "./weather", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Docker", "url": "./docker", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Casa", "url": "./casa", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -1,0 +1,96 @@
+@if (vm(); as w) {
+  <header class="head">
+    <h1>Tiempo</h1>
+    <div class="right">
+      <label class="preview">
+        Vista previa
+        <select (change)="setScene($any($event.target).value)">
+          <option value="" [selected]="!override()">Tiempo real</option>
+          @for (o of sceneOptions; track o.id) {
+            <option [value]="o.id" [selected]="override()?.name === o.id">{{ o.label }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="dn" [disabled]="!override()" (click)="toggleNight()"
+        title="Cambiar entre día y noche (solo en vista previa)">
+        {{ w.night ? '🌙 Noche' : '☀️ Día' }}
+      </button>
+      <span class="loc">{{ w.c.location }}</span>
+    </div>
+  </header>
+
+  <section class="hero" [class.night]="w.night">
+    @if (w.scene; as sc) { <app-weather-bg [scene]="sc" /> }
+    <div class="top">
+      <div class="info">
+        <div class="temp">{{ w.c.temperature | number: '1.0-0' }}°</div>
+        <div class="desc">{{ w.c.description }} · {{ w.c.location }}</div>
+        <div class="minmax">
+          Mín {{ w.c.minTemperature | number: '1.0-0' }}° · Máx {{ w.c.maxTemperature | number: '1.0-0' }}°
+        </div>
+      </div>
+      @if (!w.scene) {
+          <div class="iconwrap">
+        <img class="icon" [src]="w.icon" [alt]="w.c.description" />
+      </div>
+        }
+    </div>
+
+    <dl class="facts">
+      <div><dt>Sensación</dt><dd>{{ w.c.feelsLike | number: '1.0-0' }}°</dd></div>
+      <div><dt>Humedad</dt><dd>{{ w.c.humidity }}%</dd></div>
+      <div><dt>Viento</dt><dd>{{ w.wind }}</dd></div>
+      <div><dt>Presión</dt><dd>{{ w.c.pressure }} hPa</dd></div>
+      <div><dt>Nubes</dt><dd>{{ w.c.clouds }}%</dd></div>
+    </dl>
+
+    <div class="sun">
+      <span>🌅 {{ w.sunrise }}</span>
+      <div class="track">
+        <div class="fill" [style.width.%]="w.sunPct"></div>
+        <span class="marker" [style.left.%]="w.sunPct">{{ w.isDay ? '☀️' : '🌙' }}</span>
+      </div>
+      <span>{{ w.sunset }} 🌇</span>
+    </div>
+  </section>
+
+  <section class="days">
+    @for (d of w.days; track d.date) {
+      <article class="day">
+        <div class="visual">
+          @if (d.scene; as sc) { <app-weather-bg [scene]="sc" [size]="0.2" [pos]="[0.6, 0.5]" /> }
+          <header>
+            <b>{{ d.name }}</b>
+            <span>{{ d.date }}</span>
+          </header>
+          <div class="ddesc">{{ d.description }}</div>
+        </div>
+
+        <div class="temps">
+          <b>{{ d.max | number: '1.0-0' }}°</b>
+          <span>{{ d.min | number: '1.0-0' }}°</span>
+        </div>
+        <div class="range"><div class="bar" [style.left.%]="d.left" [style.width.%]="d.width"></div></div>
+
+        <div class="rain">{{ d.rain > 0 ? '💧 ' + (d.rain | number: '1.0-1') + ' mm' : 'Sin lluvia' }}</div>
+
+        @if (d.slots.length) {
+          <div class="slots">
+            @for (s of d.slots; track s.hour) {
+              <div class="slot">
+                <span>{{ s.hour }}</span>
+                <img [src]="s.icon" alt="" />
+                <b>{{ s.temp | number: '1.0-0' }}°</b>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="slots none">Sin desglose por horas</div>
+        }
+      </article>
+    }
+  </section>
+} @else {
+  <h1>Tiempo</h1>
+  <p class="empty">Sin datos del tiempo.</p>
+}

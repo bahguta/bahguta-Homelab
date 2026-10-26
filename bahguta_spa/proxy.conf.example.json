@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "http://192.168.1.10:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": { "X-API-Key": "SOLO-EN-TU-COPIA-LOCAL" }
+  }
+}

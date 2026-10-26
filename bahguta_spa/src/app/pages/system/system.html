@@ -1,0 +1,29 @@
+<h1>System</h1>
+
+@if (vm(); as s) {
+  <section class="gauges">
+    @for (g of s.gauges; track g.label) {
+      <div class="card">
+        <div class="gauge" [class]="'gauge ' + g.lvl" [style.--p]="g.value">
+          <span>{{ g.text }}</span>
+        </div>
+        <div class="label">{{ g.label }}</div>
+      </div>
+    }
+  </section>
+
+  <section class="info">
+    <div class="card"><span class="k">Uptime</span><b>{{ s.uptime }}</b><small>desde {{ s.since }}</small></div>
+    <div class="card"><span class="k">Backend</span><b>v{{ s.version }}</b></div>
+    <div class="card">
+      <span class="k">Refresco</span>
+      <ul>
+        <li>Dashboard · {{ s.api }}</li>
+        <li>Tiempo · {{ s.weather }}</li>
+        <li>Sistema · {{ s.system }}</li>
+      </ul>
+    </div>
+  </section>
+} @else {
+  <p class="empty">Sin datos del sistema.</p>
+}

@@ -16,12 +16,14 @@ flowchart LR
         PG[("postgres :5432")]
         PROM["Prometheus + node_exporter"]
         RP["Reverse proxy (optional) :80"]
+        WEB["bahguta-web<br/>nginx :80"]
     end
     OM["Omada controller"]
     OW["OpenWeather (internet)"]
 
     S -->|HTTP| API
     T -->|HTTP| RP --> API
+    B["Browser / phone"] -->|HTTP| WEB -->|"/api"| API
     API --> PG
     API --> PROM
     API --> OM
@@ -37,7 +39,7 @@ flowchart LR
 
 ## Docker network
 
-PostgreSQL and the backend share an external Docker network called `web`, created once:
+PostgreSQL, the backend and the web app share an external Docker network called `web`, created once:
 
 ```bash
 docker network create web
@@ -46,6 +48,7 @@ docker network create web
 | Container | Hostname | Port | Used by |
 |---|---|---|---|
 | `bahguta` (backend) | `bahguta` | 8080 | Tablet and sensors |
+| `bahguta-web` (web app, optional) | `bahguta-web` | 80 | Browsers and phones; it reaches the backend as `http://bahguta:8080` |
 | `bahguta-postgres` | `postgres` | 5432 (inside Docker only) | Backend |
 | `bahguta-mqtt` (optional, **unused**) | `mqtt` | 1883 | Nobody for now |
 
@@ -165,6 +168,7 @@ docker inspect bahguta --format '{{json .Mounts}}'  # only scripts (RW false), n
 - Do not expose port 8080 or the proxy to the internet: apart from the Docker start/stop endpoints, the API has no authentication.
 - If you need remote access, connect through a VPN (WireGuard, Tailscale...) to your local network.
 - If your router allows it, put the sensors and the tablet on an IoT VLAN with access only to the server.
+- The web app's nginx asks for a user and password (Basic auth, plain HTTP) only on the container-control route; the rest of the API passes through without authentication. Keep it on the local network or put HTTPS in front. See [bahguta_spa/README.md](../bahguta_spa/README.md#security).
 - Use different passwords for WiFi, the database and each service. Never commit `.env`, `Config.h` or `Secrets.h`.
 
 ## Troubleshooting
@@ -180,3 +184,6 @@ docker inspect bahguta --format '{{json .Mounts}}'  # only scripts (RW false), n
 | Starting or stopping a container returns `401` | `BAHGUTA_API_KEY` in the backend's `.env` must be the same as in the tablet's `Secrets.h` (and the tablet must have been rebuilt after changing it) |
 | Starting or stopping a container returns `403` | The container's name is not in `DOCKER_ALLOWED` (`docker ps --format '{{.Names}}'`) |
 | Starting or stopping fails and `docker logs bahguta` shows `Request forbidden by administrative rules` | The proxy is blocking the action: run `bash make-proxy-template.sh` and `docker compose up -d` |
+| The web app shows "Sin conexión con el backend" or nginx returns `502` | `BACKEND_URL` in `web/.env` (for example `http://bahguta:8080`) and that both containers are on the `web` network: `docker network inspect web` |
+| `bahguta-web` does not start and the error mentions `htpasswd` | The `web/htpasswd` file did not exist when Docker started it, so Docker created a folder with that name: delete it, create the file (see the web app's README) and start again |
+| The web asks for the password again and again, or the Docker buttons fail with `401` | User and password in `htpasswd`; and `BAHGUTA_API_KEY` in `web/.env` must be the same as in the backend's `.env` |

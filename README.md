@@ -9,6 +9,8 @@
 
 A control panel for your home and your homelab: an **ESP32-P4 tablet** that shows, in real time, the temperature and humidity of every room, the weather, your Docker containers, your network and more. It is fed by a **Spring Boot backend** and by battery-powered **ESP32-C3 sensors** spread around the house.
 
+The same panel is also available as a **web app** (Angular) that you can open in any browser or install on your phone.
+
 Everything runs on your local network: no cloud, and your data stays yours.
 
 > **Status:** version 1.0.0, in daily use at my home. It is a personal project that I share with the community: use it, adapt it and improve it.
@@ -19,10 +21,11 @@ Everything runs on your local network: no cloud, and your data stays yours.
 |---|---|---|
 | Backend | [`spring/`](spring/) | REST API built with Spring Boot 3.5 (Java 21), PostgreSQL, Flyway and Swagger UI |
 | Tablet | [`bahguta-display/`](bahguta-display/) | Firmware for the ESP32-P4 touch display (800x1280) with an LVGL interface |
+| Web app | [`bahguta_spa/`](bahguta_spa/) | Angular PWA served by nginx: the same screens in a browser or on your phone. See its [README](bahguta_spa/README.md) |
 | Sensors | [`bahguta-firmware/`](bahguta-firmware/) | Firmware for the ESP32-C3 nodes with a DHT22 sensor |
 | Infrastructure | [`compose/`](compose/), [`config/`](config/) | Docker Compose for PostgreSQL (and an optional Mosquitto MQTT broker, not used yet) and its configuration |
 | Utilities | [`scripts/`](scripts/) | Helper scripts: start/stop PostgreSQL and list/start/stop Docker containers |
-| Documentation | [`docs/`](docs/) | Detailed guides (API, database, hardware, network, roadmap). Also in [Spanish](docs/es/README.md) |
+| Documentation | [`docs/`](docs/) | Detailed guides (API, database, hardware, network, deployment, roadmap). Also in [Spanish](docs/es/README.md) |
 
 ## What the tablet does
 
@@ -96,11 +99,13 @@ flowchart LR
     API -->|"network"| OM["Omada"]
     API -->|"containers"| DOCKER["Docker"]
     TAB["ESP32-P4 tablet<br/>LVGL"] -->|"HTTP every 30 s"| API
+    WEB["Web app<br/>Angular + nginx"] -->|"HTTP every 30 s"| API
 ```
 
 - The **sensors** measure temperature and humidity, register themselves with the backend and send their measurements over HTTP. They run on 18650 batteries and sleep between measurements to save power.
 - The **backend** stores the measurements, manages devices and sensors, and aggregates everything into a single dashboard JSON.
 - The **tablet** polls that dashboard periodically and draws the interface.
+- The **web app** does the same from the browser. Its nginx proxies the API and adds the Docker key itself, so the key never reaches the browser.
 
 ## Hardware
 
@@ -180,6 +185,21 @@ Each sensor needs its own `Config.h` (different name, location and IP). `Config.
 4. Upload the `data/` folder (weather icons and animations) to the tablet's **LittleFS** filesystem.
 5. On first boot, open **Settings** and configure the WiFi and the backend URL (for example `http://bahguta.local`).
 
+### 4. Web app (optional)
+
+Requirements: the backend running, and Docker.
+
+```bash
+mkdir -p /opt/bahguta/web && cd /opt/bahguta/web
+cp ~/bahguta-homelab/bahguta_spa/docker-compose.example.yml docker-compose.yml
+cp ~/bahguta-homelab/bahguta_spa/.env.example .env    # BACKEND_URL and the same BAHGUTA_API_KEY as the backend
+printf 'admin:%s\n' "$(openssl passwd -apr1)" > htpasswd   # user and password for the Docker control
+docker build -t bahguta-web:latest ~/bahguta-homelab/bahguta_spa
+docker compose up -d
+```
+
+Full guide (development, configuration and security): [bahguta_spa/README.md](bahguta_spa/README.md).
+
 ## Security: read this before exposing anything
 
 This project is designed for a **trusted local network**:
@@ -188,12 +208,15 @@ This project is designed for a **trusted local network**:
 - The endpoints that start and stop containers are protected: they require the `X-API-Key` header and only act on the containers listed in `DOCKER_ALLOWED`.
 - The backend does **not** mount `/var/run/docker.sock`. It talks to Docker through a proxy (`docker-proxy`) that only allows listing, starting and stopping containers, so a compromised backend cannot become administrator of the server. Details in [docs/NETWORK.md](docs/NETWORK.md#docker-containers).
 - The key travels over plain HTTP: it stops other devices from calling those endpoints, but not someone sniffing your network.
+- The web app asks for a user and password (nginx Basic auth) only on the Docker control route. The rest of its `/api/` is proxied **without authentication**, so keep it on your local network too. Details in [bahguta_spa/README.md](bahguta_spa/README.md#security).
 - The example MQTT broker allows anonymous connections.
 - Never commit your `.env`, your `Config.h`, your `Secrets.h` or any keys. The `*.example` files are the templates.
 
 ## Continuous deployment (optional)
 
-The repository includes a `.gitlab-ci.yml` that builds the backend and deploys it with Docker Compose on the server, with automatic rollback if Spring Boot fails to start. It requires a GitLab runner with Docker access on the target machine.
+The repository includes a `.gitlab-ci.yml` with two jobs that deploy to the server with Docker Compose and roll back automatically if the new version does not start: one for the backend (changes in `spring/`) and one for the web app (changes in `bahguta_spa/`). They require a GitLab runner with Docker access on the target machine, and, on the server, the folders `/opt/bahguta/spring` (the contents of `spring/`) and `/opt/bahguta/web` (see the [web app's README](bahguta_spa/README.md#deployment)).
+
+The pipeline only runs on GitLab. If you host your copy on GitHub it is ignored: deploy by hand following the steps above, or adapt it to GitHub Actions. Server layout and requirements: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Contributing
 

@@ -1,0 +1,51 @@
+<header class="head">
+  <h1>Devices</h1>
+  @if (counter(); as c) {
+    <span class="count">
+      <b class="ok">{{ c.online }}</b> online · <b class="off">{{ c.total - (c.online ?? 0) }}</b> offline ·
+      {{ c.total }} en total
+    </span>
+  }
+</header>
+
+<section class="grid">
+  @for (it of items(); track it.dev.id) {
+    <article class="card" [class.offline]="!it.online">
+      <div class="title">
+        <div>
+          <h2>{{ it.dev.name }}</h2>
+          <p>{{ it.dev.description }}</p>
+        </div>
+        <span class="badge" [class.on]="it.online">{{ it.online ? 'ONLINE' : 'OFFLINE' }}</span>
+      </div>
+
+      <div class="readings">
+        <div class="reading">
+          <span class="num">{{ (it.s?.temperature | number: '1.1-1') ?? '—' }}<small>°</small></span>
+          <span class="label">Temperatura</span>
+        </div>
+        <div class="reading">
+          <span class="num">{{ (it.s?.humidity | number: '1.0-0') ?? '—' }}<small>%</small></span>
+          <span class="label">Humedad</span>
+        </div>
+      </div>
+      <div class="ago">
+        Última medición: {{ ago(it.s?.lastMeasurement) }}
+        @if (it.s) { · cada {{ it.s.interval }} s }
+      </div>
+
+      <dl class="info">
+        <div><dt>Modelo</dt><dd>{{ it.dev.hardwareModel }}</dd></div>
+        <div><dt>Sensor</dt><dd>{{ it.s?.type ?? '—' }}</dd></div>
+        <div><dt>Ubicación</dt><dd>{{ it.dev.location }}</dd></div>
+        <div><dt>Firmware</dt><dd>v{{ it.dev.fw }}</dd></div>
+        <div><dt>IP</dt><dd>{{ it.dev.ip }}</dd></div>
+        <div><dt>MAC</dt><dd>{{ it.dev.mac }}</dd></div>
+        <div class="wide"><dt>Device ID</dt><dd class="mono">{{ it.dev.id }}</dd></div>
+        <div class="wide"><dt>Sensor ID</dt><dd class="mono">{{ it.s?.id ?? '—' }}</dd></div>
+      </dl>
+    </article>
+  } @empty {
+    <p class="empty">Sin dispositivos</p>
+  }
+</section>
